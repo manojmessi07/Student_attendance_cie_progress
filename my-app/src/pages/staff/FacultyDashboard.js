@@ -54,7 +54,7 @@ export default function FacultyDashboard(){
       <div className="card">
         <h3>At-Risk Students</h3>
         <table className="table" style={{marginTop:10}}>
-          <thead><tr><th>Student</th><th>Subject</th><th>Expected</th><th>Obtained</th><th>Contact</th></tr></thead>
+          <thead><tr><th>Student</th><th>Subject</th><th>Expected</th><th>Obtained</th><th>Total</th><th>Contact</th></tr></thead>
           <tbody>
             {students.flatMap(stu =>
               (stu.cie_marks || []).filter(m => (m.obtained ?? -1) < (m.expected ?? 0)).map((m, i) => (
@@ -63,6 +63,7 @@ export default function FacultyDashboard(){
                   <td>{m.subjectId}</td>
                   <td>{m.expected}</td>
                   <td>{m.obtained ?? "-"}</td>
+                  <td>{m.total}</td>
                   <td>
                     <a className="btn btn-ghost" style={{padding:"6px 10px", fontSize:"0.85rem"}} href={`mailto:${stu.email}`}>Email</a>
                   </td>

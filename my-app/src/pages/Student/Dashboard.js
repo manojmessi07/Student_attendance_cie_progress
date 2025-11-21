@@ -1,6 +1,8 @@
+// src/pages/Student/Dashboard.js
 import React, { useEffect, useState } from "react";
-import { api } from "../../utils/api";
-import { useAuth } from "../../utils/auth";
+import store from "../../utils/storage";
+import PerformanceGauge from "../../components/PerformanceGauge";
+
 import {
   LineChart,
   Line,
@@ -10,164 +12,339 @@ import {
   CartesianGrid,
   ResponsiveContainer,
   BarChart,
-  Bar,
+  Bar
 } from "recharts";
 
 export default function StudentDashboard() {
-  const { user } = useAuth();
   const [data, setData] = useState(null);
-  const [messages, setMessages] = useState([]);
 
-  // 🔔 Check for unread faculty replies
   useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const reasons = await api.listReasons();
-      const unread = reasons.filter(
-        (r) => r.studentId === user.id && r.facultyReply && !r.seenByStudent
-      );
-      if (unread.length > 0) {
-        setMessages(unread);
-        await api.markReplySeen(user.id); // mark as read
-      }
-    })();
-  }, [user]);
+    const d = store.read();
 
-  // 📊 Fetch student data
-  useEffect(() => {
-    if (!user) return;
-    api.getStudentData(user.id).then(setData);
-  }, [user]);
+    const dashboard = d?.dashboard ?? {};
 
-  if (!data) return <div className="card">Loading...</div>;
+    setData({
+      user:
+        d?.students?.[0] ??
+        d?.users?.find((u) => u.role === "student") ?? {
+          name: "Student",
+          roll: "-"
+        },
 
-  const attendanceSummary = () => {
-    const total = data.attendance.length || 0;
-    const present = data.attendance.filter((a) => a.status === "present").length;
-    const percent = total === 0 ? 100 : Math.round((present / total) * 100);
-    return { total, present, percent };
-  };
+      upcomingClasses: dashboard.upcomingClasses ?? [],
+      subjects: dashboard.dashboardSubjects ?? [],
+      cieChart: dashboard.cie_marks_for_chart ?? [],
+      attendanceTimeline: dashboard.attendanceTimeline ?? [],
+      assignment: dashboard.assignment ?? null,
+      pendingQuizzes: dashboard.pendingQuizzes ?? [],
+      completedCourses: dashboard.completedCourses ?? 0,
+      hoursSpent: dashboard.hoursSpent ?? "0h",
+      performance: dashboard.performance ?? { attendance: 100, cie: {} }
+    });
+  }, []);
 
-  const cieBySubject = data.subjects
-    .map((s) => {
-      const marks = data.cie_marks
-        .filter((m) => m.subjectId === s.id)
-        .sort((a, b) => a.cieNo - b.cieNo);
-      return { subject: s.name, marks };
-    })
-    .filter((x) => x.marks.length > 0);
+  if (!data)
+    return <div className="card" style={{ padding: 16 }}>Loading...</div>;
 
-  const attTimeline = (data.attendance || [])
-    .slice(-12)
-    .map((a) => ({
-      date: a.date,
-      val: a.status === "present" ? 1 : 0,
-    }));
+  const {
+    user,
+    upcomingClasses,
+    subjects,
+    cieChart,
+    attendanceTimeline,
+    assignment,
+    pendingQuizzes,
+    hoursSpent,
+    performance
+  } = data;
+
+  const attendancePercent = performance?.attendance ?? 100;
 
   return (
-    <div style={{ display: "grid", gap: 16, position: "relative" }}>
-      {/* 🔔 Notification Popup */}
-      {messages.length > 0 && (
-        <div
-          className="card"
-          style={{
-            position: "fixed",
-            top: 80,
-            right: 30,
-            backgroundColor: "rgba(37,99,235,0.9)",
-            color: "white",
-            padding: "16px 20px",
-            borderRadius: "12px",
-            zIndex: 1000,
-            width: 300,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-          }}
-        >
-          <h4>📬 New Faculty Replies</h4>
-          <ul style={{ marginTop: 8, listStyle: "none", padding: 0 }}>
-            {messages.map((m) => (
-              <li key={m.id} style={{ marginBottom: 8 }}>
-                <strong>{m.subjectName || "Subject"}:</strong>{" "}
-                {m.facultyReply}
-              </li>
-            ))}
-          </ul>
-          <button
-            onClick={() => setMessages([])}
-            style={{
-              marginTop: 8,
-              background: "white",
-              color: "#2563eb",
-              border: "none",
-              padding: "6px 10px",
-              borderRadius: 6,
-              cursor: "pointer",
-              fontWeight: "600",
-            }}
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {/* Header card */}
+    <div
+      style={{
+        padding: 20,
+        display: "grid",
+        gap: 20,
+        fontFamily: "Inter, Arial, sans-serif"
+      }}
+    >
+      {/* Header */}
       <div
-        className="card"
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          background: "#fff",
+          borderRadius: 10,
+          padding: 16,
+          border: "1px solid #F3F4F6"
         }}
       >
-        <div>
-          <div className="muted">Welcome back</div>
-          <h2 style={{ margin: "6px 0" }}>{user.name}</h2>
-          <div className="small muted">Roll: {user.roll || "-"}</div>
+        <div
+          style={{
+            background: "#ECFDF5",
+            padding: 10,
+            borderRadius: 8,
+            color: "#065F46",
+            fontWeight: 600
+          }}
+        >
+          Great effort so far {user?.name ?? "Student"}!
         </div>
-        <div style={{ display: "flex", gap: 18 }}>
-          <div style={{ minWidth: 120 }} className="card">
-            <div className="small muted">Attendance</div>
-            <div className="kpi">{attendanceSummary().percent}%</div>
-            <div className="small muted">
-              {attendanceSummary().present} / {attendanceSummary().total}
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "2fr 1fr 1fr 1fr",
+            gap: 16,
+            marginTop: 12
+          }}
+        >
+          <div style={{ padding: 12 }}>
+            <div style={{ fontSize: 14, color: "#374151", marginBottom: 6 }}>
+              Overall performance
             </div>
+
+            <div className="card" style={{ textAlign: "center" }}>
+              <PerformanceGauge value={80} />
+            </div>
+
+            <div style={{ fontSize: 12, color: "#6B7280" }}>PRO LEARNER</div>
           </div>
-          <div style={{ minWidth: 120 }} className="card">
-            <div className="small muted">Subjects</div>
-            <div className="kpi">{data.subjects.length}</div>
-            <div className="small muted">Active</div>
+
+          <div style={{ padding: 12, textAlign: "center" }}>
+            <div style={{ fontSize: 12, color: "#6B7280" }}>Attendance</div>
+            <div style={{ fontSize: 22, fontWeight: 700 }}>
+              {attendancePercent}%
+            </div>
+            <div style={{ fontSize: 12, color: "#6B7280" }}>This term</div>
+          </div>
+
+          <div style={{ padding: 12, textAlign: "center" }}>
+            <div style={{ fontSize: 12, color: "#6B7280" }}>Subjects</div>
+            <div style={{ fontSize: 22, fontWeight: 700 }}>
+              {subjects.length}
+            </div>
+            <div style={{ fontSize: 12, color: "#6B7280" }}>Active</div>
+          </div>
+
+          <div style={{ padding: 12, textAlign: "center" }}>
+            <div style={{ fontSize: 12, color: "#6B7280" }}>Hours spent</div>
+            <div style={{ fontSize: 22, fontWeight: 700 }}>{hoursSpent}</div>
+            <div style={{ fontSize: 12, color: "#6B7280" }}>Total</div>
           </div>
         </div>
       </div>
 
-      {/* Charts */}
+      {/* Main grid */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 420px",
-          gap: 16,
+          gridTemplateColumns: "1fr 380px",
+          gap: 20
         }}
       >
-        {/* CIE overview */}
-        <div className="card">
-          <h3>CIE Overview</h3>
-          {cieBySubject.length === 0 && (
-            <div className="small muted">No CIE records yet.</div>
-          )}
-          {cieBySubject.map((s) => (
-            <div key={s.subject} style={{ marginTop: 12 }}>
-              <div className="small muted">{s.subject}</div>
-              <div style={{ height: 140 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={s.marks.map((m) => ({
-                      name: `CIE-${m.cieNo}`,
-                      obtained: m.obtained,
-                      expected: m.expected,
-                    }))}
+        <div style={{ display: "grid", gap: 20 }}>
+          {/* Upcoming classes */}
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 10,
+              padding: 16,
+              border: "1px solid #F3F4F6"
+            }}
+          >
+            <h3 style={{ margin: 0 }}>Upcoming classes</h3>
+
+            {upcomingClasses.length === 0 && (
+              <div style={{ color: "#9CA3AF", marginTop: 12 }}>
+                No upcoming classes
+              </div>
+            )}
+
+            {upcomingClasses.map((cls) => (
+              <div
+                key={cls.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: 12,
+                  marginTop: 12,
+                  borderRadius: 8,
+                  border: "1px solid #F3F4F6"
+                }}
+              >
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <img
+                    src={cls.image}
+                    alt={cls.title}
+                    style={{
+                      width: 64,
+                      height: 64,
+                      objectFit: "cover",
+                      borderRadius: 8
+                    }}
+                  />
+
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{cls.title}</div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "#6B7280",
+                        marginTop: 6
+                      }}
+                    >
+                      {cls.subject} • by {cls.teacher}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: "right" }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      background: "#FEF3C7",
+                      padding: "4px 8px",
+                      borderRadius: 8,
+                      display: "inline-block"
+                    }}
                   >
+                    {cls.dateTimeLabel ??
+                      `${cls.date} | ${cls.time}`}
+                  </div>
+
+                  <div
+                    style={{ marginTop: 8, color: "#EF4444", fontSize: 13 }}
+                  >
+                    {cls.timeLeft}
+                  </div>
+
+                  <div style={{ marginTop: 8 }}>
+                    <button
+                      style={{
+                        background: "#10B981",
+                        color: "#fff",
+                        border: "none",
+                        padding: "8px 12px",
+                        borderRadius: 8,
+                        cursor: "pointer",
+                        fontWeight: 700
+                      }}
+                    >
+                      Join
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Courses list */}
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 10,
+              padding: 16,
+              border: "1px solid #F3F4F6"
+            }}
+          >
+            <h3 style={{ margin: 0 }}>Total courses ({subjects.length})</h3>
+
+            <div style={{ marginTop: 12 }}>
+              {subjects.map((sub) => (
+                <div
+                  key={sub.id}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 240px 90px 110px",
+                    gap: 12,
+                    alignItems: "center",
+                    padding: "10px 0",
+                    borderBottom: "1px solid #F3F4F6"
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{sub.name}</div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "#9CA3AF",
+                        marginTop: 6
+                      }}
+                    >
+                      5 chapter • 30 lecture
+                    </div>
+                  </div>
+
+                  <div>
+                    <div
+                      style={{
+                        height: 8,
+                        background: "#F3F4F6",
+                        borderRadius: 6,
+                        overflow: "hidden"
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${sub.progress ?? 0}%`,
+                          height: "100%",
+                          background:
+                            sub.progress === 100
+                              ? "#10B981"
+                              : "#FB923C"
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ fontWeight: 700 }}>
+                    {sub.score ?? 0}%
+                  </div>
+
+                  <div>
+                    <div
+                      style={{
+                        display: "inline-block",
+                        padding: "6px 10px",
+                        borderRadius: 20,
+                        border: "1px solid #E5E7EB",
+                        fontSize: 13
+                      }}
+                    >
+                      {sub.progress === 100
+                        ? "Completed"
+                        : "In progress"}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Charts */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 360px",
+              gap: 20
+            }}
+          >
+            <div
+              style={{
+                background: "#fff",
+                borderRadius: 10,
+                padding: 16,
+                border: "1px solid #F3F4F6"
+              }}
+            >
+              <h3 style={{ margin: 0 }}>CIE Overview</h3>
+
+              <div style={{ height: 220, marginTop: 12 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={cieChart}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
+                    <XAxis dataKey="cie" />
                     <YAxis />
                     <Tooltip />
                     <Line
@@ -186,22 +363,239 @@ export default function StudentDashboard() {
                 </ResponsiveContainer>
               </div>
             </div>
-          ))}
+
+            <div
+              style={{
+                background: "#fff",
+                borderRadius: 10,
+                padding: 16,
+                border: "1px solid #F3F4F6"
+              }}
+            >
+              <h3 style={{ margin: 0 }}>Attendance Trend</h3>
+
+              <div style={{ height: 220, marginTop: 12 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={attendanceTimeline}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(d) => d.slice(5)}
+                    />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey="val" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Attendance trend */}
-        <div className="card">
-          <h3>Attendance Trend</h3>
-          <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={attTimeline}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="val" />
-              </BarChart>
-            </ResponsiveContainer>
+        {/* Right sidebar */}
+        <div style={{ display: "grid", gap: 20 }}>
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 10,
+              padding: 16,
+              border: "1px solid #F3F4F6"
+            }}
+          >
+            <div style={{ fontWeight: 700 }}>Study Streak</div>
+            <div style={{ marginTop: 8, color: "#6B7280" }}>
+              5 days without a break
+            </div>
+
+            <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+              <div>🔥</div>
+              <div>🔥</div>
+              <div>🔥</div>
+              <div>🔥</div>
+              <div>🔥</div>
+            </div>
+
+            <div
+              style={{
+                marginTop: 12,
+                fontSize: 13,
+                color: "#6B7280"
+              }}
+            >
+              6 classes covered • 4 assignments completed
+            </div>
+          </div>
+
+          {/* Assignment */}
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 10,
+              padding: 16,
+              border: "1px solid #F3F4F6"
+            }}
+          >
+            <h4 style={{ marginTop: 0 }}>Assignment</h4>
+
+            {assignment ? (
+              <div>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    alignItems: "center"
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      background: "#EEF2FF",
+                      borderRadius: 8,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                  >
+                    📘
+                  </div>
+
+                  <div>
+                    <div style={{ fontWeight: 700 }}>
+                      {assignment.title}
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "#9CA3AF",
+                        marginTop: 6
+                      }}
+                    >
+                      {assignment.subject} • Assignment
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 8,
+                        fontSize: 13,
+                        color: "#EF4444"
+                      }}
+                    >
+                      Submit before: {assignment.deadline}
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  style={{ marginTop: 12, display: "flex", gap: 8 }}
+                >
+                  <button
+                    style={{
+                      background: "transparent",
+                      border: "1px solid #10B981",
+                      color: "#10B981",
+                      padding: "8px 12px",
+                      borderRadius: 8
+                    }}
+                  >
+                    View
+                  </button>
+
+                  <button
+                    style={{
+                      background: "#10B981",
+                      border: "none",
+                      color: "#fff",
+                      padding: "8px 12px",
+                      borderRadius: 8
+                    }}
+                  >
+                    Upload
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ color: "#9CA3AF" }}>No assignments</div>
+            )}
+          </div>
+
+          {/* Pending quizzes */}
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 10,
+              padding: 16,
+              border: "1px solid #F3F4F6"
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}
+            >
+              <div style={{ fontWeight: 700 }}>Pending quizzes</div>
+
+              <button
+                style={{
+                  background: "transparent",
+                  border: "1px solid #10B981",
+                  color: "#10B981",
+                  padding: "6px 8px",
+                  borderRadius: 8
+                }}
+              >
+                See all
+              </button>
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              {pendingQuizzes.length === 0 && (
+                <div style={{ color: "#9CA3AF" }}>No pending quizzes</div>
+              )}
+
+              {pendingQuizzes.map((q) => (
+                <div
+                  key={q.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "10px 0",
+                    borderBottom: "1px solid #F3F4F6"
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{q.title}</div>
+
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "#9CA3AF"
+                      }}
+                    >
+                      {q.questions ?? 0} question • {q.duration ?? "-"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <button
+                      style={{
+                        background: "transparent",
+                        border: "1px solid #10B981",
+                        color: "#10B981",
+                        padding: "6px 10px",
+                        borderRadius: 8
+                      }}
+                    >
+                      Start
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

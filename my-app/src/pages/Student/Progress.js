@@ -12,6 +12,7 @@ export default function Progress() {
     cieNo: 1,
     expected: "",
     obtained: "",
+    total: "",
   });
   const [reason, setReason] = useState("");
   const [msg, setMsg] = useState("");
@@ -96,7 +97,6 @@ export default function Progress() {
                 ))}
               </select>
             </div>
-
             <div className="cie-field">
               <label>CIE No: </label>
               <input
@@ -135,8 +135,19 @@ export default function Progress() {
                 placeholder="Obtained Marks"
               />
             </div>
+          <div className="cie-field">
+              <label>Total Marks: </label>
+              <input
+                className="cie-input obtained-input"
+                type="number"
+                value={form.total}
+                onChange={(e) =>
+                  setForm({ ...form, total: e.target.value })
+                }
+                placeholder="Total marks"
+              />
+            </div>
           </div>
-
           {/* Reason input appears only if obtained < expected */}
           {form.obtained &&
             form.expected &&
@@ -171,6 +182,7 @@ export default function Progress() {
               <th>CIE</th>
               <th>Expected</th>
               <th>Obtained</th>
+              <th>Total</th>
               <th>Date</th>
               <th>Reason</th>
               <th>Faculty Reply</th>
@@ -193,6 +205,7 @@ export default function Progress() {
                   <td>{m.cieNo}</td>
                   <td>{m.expected}</td>
                   <td>{m.obtained ?? "-"}</td>
+                  <td>{m.total}</td>
                   <td>{m.date}</td>
                   <td className="scroll-box">{r?.reason || "-"}</td>
                   <td className="scroll-box">{r?.facultyReply || "-"}</td>

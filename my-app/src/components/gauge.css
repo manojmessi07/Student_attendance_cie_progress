@@ -1,0 +1,101 @@
+/* Container */
+.gauge-container {
+  text-align: center;
+  margin: 20px auto;
+}
+
+/* Wrapper */
+.gauge-wrapper {
+  width: 260px;
+  height: 160px;
+  position: relative;
+  margin: 0 auto;
+}
+
+/* Background colored arc */
+.gauge-arc {
+  width: 100%;
+  height: 100%;
+  border-radius: 260px 260px 0 0;
+  background: conic-gradient(
+    red 0deg,
+    orange 60deg,
+    yellow 110deg,
+    green 180deg
+  );
+  border: 6px solid var(--border);
+  border-bottom: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Needle */
+.gauge-needle {
+  width: 2px;
+  height: 75px;
+  background: var(--primary);
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform-origin: bottom;
+  transition: transform 0.8s ease-out;
+}
+
+/* Center round base of needle */
+.gauge-center {
+  width: 16px;
+  height: 16px;
+  background: var(--primary);
+  border-radius: 50%;
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Numerical tick labels */
+.gauge-label {
+  position: absolute;
+  bottom: -10px;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.gauge-label-0 {
+  left: 0px;
+}
+
+.gauge-label-50 {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.gauge-label-100 {
+  right: 0px;
+}
+
+/* Value text */
+.gauge-value {
+  margin-top: 15px;
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--text);
+}
+
+/* Light theme support */
+[data-theme="light"] .gauge-arc {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark theme support */
+[data-theme="dark"] .gauge-arc {
+  background: conic-gradient(
+    #ff4444 0deg,
+    #ff9900 60deg,
+    #ffdd55 110deg,
+    #33dd77 180deg
+  );
+  box-shadow: 0 0 15px rgba(255,255,255,0.1);
+}
