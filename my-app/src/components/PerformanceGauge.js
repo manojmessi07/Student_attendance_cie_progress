@@ -1,55 +1,61 @@
+// src/components/PerformanceGauge.js
 import React, { useEffect, useState } from "react";
 import "./gauge.css";
 
 export default function PerformanceGauge({ value }) {
-  const [displayValue, setDisplayValue] = useState(0);
-  const [rotation, setRotation] = useState(0);
+  const [animatedValue, setAnimatedValue] = useState(0);
 
-  // animate value increasing from 0 → actual
   useEffect(() => {
     let start = 0;
     const end = value;
-    const duration = 1000;
-    const step = 10;
+    const duration = 1500;
+    const increment = end / (duration / 16);
 
-    const increment = (end - start) / (duration / step);
-
-    const anim = setInterval(() => {
+    const animation = setInterval(() => {
       start += increment;
       if (start >= end) {
         start = end;
-        clearInterval(anim);
+        clearInterval(animation);
       }
-      setDisplayValue(Math.floor(start));
-      setRotation((start / 100) * 180);
-    }, step);
+      setAnimatedValue(Math.floor(start));
+    }, 16);
 
-    return () => clearInterval(anim);
+    return () => clearInterval(animation);
   }, [value]);
 
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (animatedValue / 100) * circumference;
+
   return (
-    <div className="gauge-container">
+    <div className="circular-gauge-container">
       <div className="gauge-wrapper">
-
-        {/* Colored semi-circle background */}
-        <div className="gauge-arc"></div>
-
-        {/* Needle */}
-        <div
-          className="gauge-needle"
-          style={{ transform: `rotate(${rotation - 90}deg)` }} 
-        ></div>
-
-        {/* Center cap */}
-        <div className="gauge-center"></div>
-
-        {/* Tick Labels */}
-        <div className="gauge-label gauge-label-0">0</div>
-        <div className="gauge-label gauge-label-50">50</div>
-        <div className="gauge-label gauge-label-100">100</div>
+        <svg className="gauge-svg" width="120" height="120" viewBox="0 0 120 120">
+          <circle
+            className="gauge-background"
+            cx="60"
+            cy="60"
+            r={radius}
+            strokeWidth="12"
+            fill="none"
+          />
+          <circle
+            className="gauge-progress"
+            cx="60"
+            cy="60"
+            r={radius}
+            strokeWidth="12"
+            fill="none"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            transform="rotate(-90 60 60)"
+          />
+        </svg>
+        <div className="gauge-center-text">
+          <span className="gauge-percentage">{animatedValue}%</span>
+        </div>
       </div>
-
-      <p className="gauge-value">{displayValue}%</p>
+      <div className="gauge-label">PRO LEARNER</div>
     </div>
   );
 }

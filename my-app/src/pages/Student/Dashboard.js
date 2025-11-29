@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import store from "../../utils/storage";
 import PerformanceGauge from "../../components/PerformanceGauge";
-
 import {
   LineChart,
   Line,
@@ -15,36 +14,45 @@ import {
   Bar
 } from "recharts";
 
+import "./Dashboard.css";
+
 export default function StudentDashboard() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    const d = store.read();
-
-    const dashboard = d?.dashboard ?? {};
+    const st = store.read();
+    const dashboard = st.dashboard || {};
 
     setData({
       user:
-        d?.students?.[0] ??
-        d?.users?.find((u) => u.role === "student") ?? {
-          name: "Student",
-          roll: "-"
-        },
+        st.students?.[0] ||
+        st.users?.find((u) => u.role === "student") ||
+        { name: "Student", roll: "-" },
 
-      upcomingClasses: dashboard.upcomingClasses ?? [],
-      subjects: dashboard.dashboardSubjects ?? [],
-      cieChart: dashboard.cie_marks_for_chart ?? [],
-      attendanceTimeline: dashboard.attendanceTimeline ?? [],
-      assignment: dashboard.assignment ?? null,
-      pendingQuizzes: dashboard.pendingQuizzes ?? [],
-      completedCourses: dashboard.completedCourses ?? 0,
-      hoursSpent: dashboard.hoursSpent ?? "0h",
-      performance: dashboard.performance ?? { attendance: 100, cie: {} }
+      upcomingClasses: dashboard.upcomingClasses || [],
+      subjects: dashboard.dashboardSubjects || [],
+      cieChart: dashboard.cie_marks_for_chart || [],
+      attendanceTimeline: dashboard.attendanceTimeline || [],
+      assignment: dashboard.assignment || null,
+      pendingQuizzes: dashboard.pendingQuizzes || [],
+
+      completedCourses: dashboard.completedCourses || 0,
+      hoursSpent: dashboard.hoursSpent || "0h",
+
+      performance: dashboard.performance || {
+        attendance: 100,
+        cie: {}
+      }
     });
   }, []);
 
   if (!data)
-    return <div className="card" style={{ padding: 16 }}>Loading...</div>;
+    return (
+      <div className="dashboard-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading your dashboard...</p>
+      </div>
+    );
 
   const {
     user,
@@ -61,330 +69,220 @@ export default function StudentDashboard() {
   const attendancePercent = performance?.attendance ?? 100;
 
   return (
-    <div
-      style={{
-        padding: 20,
-        display: "grid",
-        gap: 20,
-        fontFamily: "Inter, Arial, sans-serif"
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: 10,
-          padding: 16,
-          border: "1px solid #F3F4F6"
-        }}
-      >
-        <div
-          style={{
-            background: "#ECFDF5",
-            padding: 10,
-            borderRadius: 8,
-            color: "#065F46",
-            fontWeight: 600
-          }}
-        >
-          Great effort so far {user?.name ?? "Student"}!
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "2fr 1fr 1fr 1fr",
-            gap: 16,
-            marginTop: 12
-          }}
-        >
-          <div style={{ padding: 12 }}>
-            <div style={{ fontSize: 14, color: "#374151", marginBottom: 6 }}>
-              Overall performance
-            </div>
-
-            <div className="card" style={{ textAlign: "center" }}>
-              <PerformanceGauge value={80} />
-            </div>
-
-            <div style={{ fontSize: 12, color: "#6B7280" }}>PRO LEARNER</div>
-          </div>
-
-          <div style={{ padding: 12, textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "#6B7280" }}>Attendance</div>
-            <div style={{ fontSize: 22, fontWeight: 700 }}>
-              {attendancePercent}%
-            </div>
-            <div style={{ fontSize: 12, color: "#6B7280" }}>This term</div>
-          </div>
-
-          <div style={{ padding: 12, textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "#6B7280" }}>Subjects</div>
-            <div style={{ fontSize: 22, fontWeight: 700 }}>
-              {subjects.length}
-            </div>
-            <div style={{ fontSize: 12, color: "#6B7280" }}>Active</div>
-          </div>
-
-          <div style={{ padding: 12, textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "#6B7280" }}>Hours spent</div>
-            <div style={{ fontSize: 22, fontWeight: 700 }}>{hoursSpent}</div>
-            <div style={{ fontSize: 12, color: "#6B7280" }}>Total</div>
+    <div className="student-dashboard">
+      {/* Header Section */}
+      <div className="dashboard-header">
+        <div className="welcome-banner">
+          <div className="welcome-icon">🎯</div>
+          <div className="welcome-text">
+            <h1>Welcome back, {user?.name ?? "Student"}!</h1>
+            <p>
+              Great effort so far! Keep up the hard work — you're doing amazing!
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Main grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 380px",
-          gap: 20
-        }}
-      >
-        <div style={{ display: "grid", gap: 20 }}>
-          {/* Upcoming classes */}
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 10,
-              padding: 16,
-              border: "1px solid #F3F4F6"
-            }}
-          >
-            <h3 style={{ margin: 0 }}>Upcoming classes</h3>
-
-            {upcomingClasses.length === 0 && (
-              <div style={{ color: "#9CA3AF", marginTop: 12 }}>
-                No upcoming classes
-              </div>
-            )}
-
-            {upcomingClasses.map((cls) => (
-              <div
-                key={cls.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: 12,
-                  marginTop: 12,
-                  borderRadius: 8,
-                  border: "1px solid #F3F4F6"
-                }}
-              >
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <img
-                    src={cls.image}
-                    alt={cls.title}
-                    style={{
-                      width: 64,
-                      height: 64,
-                      objectFit: "cover",
-                      borderRadius: 8
-                    }}
-                  />
-
-                  <div>
-                    <div style={{ fontWeight: 700 }}>{cls.title}</div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "#6B7280",
-                        marginTop: 6
-                      }}
-                    >
-                      {cls.subject} • by {cls.teacher}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ textAlign: "right" }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      background: "#FEF3C7",
-                      padding: "4px 8px",
-                      borderRadius: 8,
-                      display: "inline-block"
-                    }}
-                  >
-                    {cls.dateTimeLabel ??
-                      `${cls.date} | ${cls.time}`}
-                  </div>
-
-                  <div
-                    style={{ marginTop: 8, color: "#EF4444", fontSize: 13 }}
-                  >
-                    {cls.timeLeft}
-                  </div>
-
-                  <div style={{ marginTop: 8 }}>
-                    <button
-                      style={{
-                        background: "#10B981",
-                        color: "#fff",
-                        border: "none",
-                        padding: "8px 12px",
-                        borderRadius: 8,
-                        cursor: "pointer",
-                        fontWeight: 700
-                      }}
-                    >
-                      Join
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+      {/* Performance Metrics */}
+      <div className="metrics-grid">
+        <div className="metric-card performance-card">
+          <div className="metric-header">
+            <h3>Overall Performance</h3>
+            <span className="metric-subtitle">Course Completion Rate</span>
           </div>
+          <div className="gauge-container">
+            <PerformanceGauge
+              value={
+                subjects.length
+                  ? Math.round(
+                      subjects.reduce((acc, s) => acc + (s.progress || 0), 0) /
+                        subjects.length
+                    )
+                  : 0
+              }
+            />
+          </div>
+        </div>
 
-          {/* Courses list */}
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 10,
-              padding: 16,
-              border: "1px solid #F3F4F6"
-            }}
-          >
-            <h3 style={{ margin: 0 }}>Total courses ({subjects.length})</h3>
+        <div className="metric-card">
+          <div className="metric-icon">📊</div>
+          <div className="metric-content">
+            <div className="metric-value">{attendancePercent}%</div>
+            <div className="metric-label">Attendance</div>
+            <div className="metric-subtext">This term</div>
+          </div>
+        </div>
 
-            <div style={{ marginTop: 12 }}>
-              {subjects.map((sub) => (
-                <div
-                  key={sub.id}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 240px 90px 110px",
-                    gap: 12,
-                    alignItems: "center",
-                    padding: "10px 0",
-                    borderBottom: "1px solid #F3F4F6"
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{sub.name}</div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "#9CA3AF",
-                        marginTop: 6
-                      }}
-                    >
-                      5 chapter • 30 lecture
-                    </div>
-                  </div>
+        <div className="metric-card">
+          <div className="metric-icon">📚</div>
+          <div className="metric-content">
+            <div className="metric-value">{subjects.length}</div>
+            <div className="metric-label">Subjects</div>
+            <div className="metric-subtext">Active</div>
+          </div>
+        </div>
 
-                  <div>
-                    <div
-                      style={{
-                        height: 8,
-                        background: "#F3F4F6",
-                        borderRadius: 6,
-                        overflow: "hidden"
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: `${sub.progress ?? 0}%`,
-                          height: "100%",
-                          background:
-                            sub.progress === 100
-                              ? "#10B981"
-                              : "#FB923C"
-                        }}
-                      />
-                    </div>
-                  </div>
+        <div className="metric-card">
+          <div className="metric-icon">⏱️</div>
+          <div className="metric-content">
+            <div className="metric-value">{hoursSpent}</div>
+            <div className="metric-label">Hours Spent</div>
+            <div className="metric-subtext">Total</div>
+          </div>
+        </div>
+      </div>
 
-                  <div style={{ fontWeight: 700 }}>
-                    {sub.score ?? 0}%
-                  </div>
+      {/* Main Content */}
+      <div className="dashboard-content">
+        {/* LEFT SECTION */}
+        <div className="content-column main-content">
+          {/* Upcoming Classes */}
+          <div className="content-card">
+            <div className="card-header">
+              <h3>Upcoming Classes</h3>
+              <button className="view-all-btn">View All</button>
+            </div>
 
-                  <div>
-                    <div
-                      style={{
-                        display: "inline-block",
-                        padding: "6px 10px",
-                        borderRadius: 20,
-                        border: "1px solid #E5E7EB",
-                        fontSize: 13
-                      }}
-                    >
-                      {sub.progress === 100
-                        ? "Completed"
-                        : "In progress"}
-                    </div>
-                  </div>
+            <div className="classes-list">
+              {upcomingClasses.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">📅</div>
+                  <p>No upcoming classes</p>
                 </div>
-              ))}
+              ) : (
+                upcomingClasses.map((cls) => (
+                  <div key={cls.id} className="class-card">
+                    <div className="class-info">
+                      <div className="class-image">
+                        {cls.image && <img src={cls.image} alt={cls.title} />}
+                      </div>
+                      <div className="class-details">
+                        <h4 className="class-title">{cls.title}</h4>
+                        <p className="class-meta">
+                          {cls.subject} • {cls.teacher}
+                        </p>
+                        <div className="class-time">
+                          <span className="time-badge">
+                            {cls.dateTimeLabel ||
+                              `${cls.date || ""} ${cls.time || ""}`}
+                          </span>
+                          <span className="time-left">{cls.timeLeft}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button className="join-btn primary-btn">Join</button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
-          {/* Charts */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 360px",
-              gap: 20
-            }}
-          >
-            <div
-              style={{
-                background: "#fff",
-                borderRadius: 10,
-                padding: 16,
-                border: "1px solid #F3F4F6"
-              }}
-            >
-              <h3 style={{ margin: 0 }}>CIE Overview</h3>
+          {/* Courses List */}
+          <div className="content-card">
+            <div className="card-header">
+              <h3>Total Courses ({subjects.length})</h3>
+            </div>
 
-              <div style={{ height: 220, marginTop: 12 }}>
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="courses-table">
+              {subjects.length === 0 ? (
+                <div className="empty-state">
+                  <p>No subjects found</p>
+                </div>
+              ) : (
+                subjects.map((sub) => (
+                  <div key={sub.id} className="course-row">
+                    <div className="course-info">
+                      <h4 className="course-name">{sub.name}</h4>
+                      <p className="course-stats">
+                        Progress: {sub.progress || 0}%
+                      </p>
+                    </div>
+
+                    <div className="progress-section">
+                      <div className="progress-bar">
+                        <div
+                          className="progress-fill"
+                          style={{
+                            width: `${sub.progress || 0}%`,
+                            backgroundColor:
+                              sub.progress === 100 ? "#10B981" : "#3B82F6"
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div className="score-section">
+                      <span className="score-value">{sub.score || 0}%</span>
+                    </div>
+
+                    <div className="status-section">
+                      <span
+                        className={`status-badge ${
+                          sub.progress === 100
+                            ? "status-completed"
+                            : "status-progress"
+                        }`}
+                      >
+                        {sub.progress === 100 ? "Completed" : "In Progress"}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* CIE Chart */}
+          <div className="charts-grid">
+            <div className="content-card">
+              <div className="card-header">
+                <h3>CIE Overview</h3>
+              </div>
+
+              <div className="chart-container">
+                <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={cieChart}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="cie" />
-                    <YAxis />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="cie" stroke="#6B7280" fontSize={12} />
+                    <YAxis stroke="#6B7280" fontSize={12} />
                     <Tooltip />
                     <Line
                       type="monotone"
                       dataKey="obtained"
                       stroke="#2563eb"
-                      strokeWidth={2}
+                      strokeWidth={3}
                     />
                     <Line
                       type="monotone"
                       dataKey="expected"
                       stroke="#06b6d4"
-                      strokeWidth={2}
+                      strokeWidth={3}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            <div
-              style={{
-                background: "#fff",
-                borderRadius: 10,
-                padding: 16,
-                border: "1px solid #F3F4F6"
-              }}
-            >
-              <h3 style={{ margin: 0 }}>Attendance Trend</h3>
+            {/* Attendance Trend */}
+            <div className="content-card">
+              <div className="card-header">
+                <h3>Attendance Trend</h3>
+              </div>
 
-              <div style={{ height: 220, marginTop: 12 }}>
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="chart-container">
+                <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={attendanceTimeline}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis
                       dataKey="date"
                       tickFormatter={(d) => d.slice(5)}
+                      stroke="#6B7280"
+                      fontSize={12}
                     />
-                    <YAxis allowDecimals={false} />
+                    <YAxis allowDecimals={false} stroke="#6B7280" />
                     <Tooltip />
-                    <Bar dataKey="val" />
+                    <Bar dataKey="val" fill="#10B981" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -392,209 +290,73 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Right sidebar */}
-        <div style={{ display: "grid", gap: 20 }}>
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 10,
-              padding: 16,
-              border: "1px solid #F3F4F6"
-            }}
-          >
-            <div style={{ fontWeight: 700 }}>Study Streak</div>
-            <div style={{ marginTop: 8, color: "#6B7280" }}>
-              5 days without a break
-            </div>
-
-            <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
-              <div>🔥</div>
-              <div>🔥</div>
-              <div>🔥</div>
-              <div>🔥</div>
-              <div>🔥</div>
-            </div>
-
-            <div
-              style={{
-                marginTop: 12,
-                fontSize: 13,
-                color: "#6B7280"
-              }}
-            >
-              6 classes covered • 4 assignments completed
-            </div>
-          </div>
-
+        {/* RIGHT SIDEBAR */}
+        <div className="content-column sidebar">
           {/* Assignment */}
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 10,
-              padding: 16,
-              border: "1px solid #F3F4F6"
-            }}
-          >
-            <h4 style={{ marginTop: 0 }}>Assignment</h4>
-
-            {assignment ? (
-              <div>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 10,
-                    alignItems: "center"
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      background: "#EEF2FF",
-                      borderRadius: 8,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}
-                  >
-                    📘
-                  </div>
-
-                  <div>
-                    <div style={{ fontWeight: 700 }}>
-                      {assignment.title}
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "#9CA3AF",
-                        marginTop: 6
-                      }}
-                    >
-                      {assignment.subject} • Assignment
-                    </div>
-
-                    <div
-                      style={{
-                        marginTop: 8,
-                        fontSize: 13,
-                        color: "#EF4444"
-                      }}
-                    >
-                      Submit before: {assignment.deadline}
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  style={{ marginTop: 12, display: "flex", gap: 8 }}
-                >
-                  <button
-                    style={{
-                      background: "transparent",
-                      border: "1px solid #10B981",
-                      color: "#10B981",
-                      padding: "8px 12px",
-                      borderRadius: 8
-                    }}
-                  >
-                    View
-                  </button>
-
-                  <button
-                    style={{
-                      background: "#10B981",
-                      border: "none",
-                      color: "#fff",
-                      padding: "8px 12px",
-                      borderRadius: 8
-                    }}
-                  >
-                    Upload
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div style={{ color: "#9CA3AF" }}>No assignments</div>
-            )}
-          </div>
-
-          {/* Pending quizzes */}
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 10,
-              padding: 16,
-              border: "1px solid #F3F4F6"
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center"
-              }}
-            >
-              <div style={{ fontWeight: 700 }}>Pending quizzes</div>
-
-              <button
-                style={{
-                  background: "transparent",
-                  border: "1px solid #10B981",
-                  color: "#10B981",
-                  padding: "6px 8px",
-                  borderRadius: 8
-                }}
-              >
-                See all
-              </button>
+          <div className="content-card">
+            <div className="card-header">
+              <h3>Assignment</h3>
             </div>
 
-            <div style={{ marginTop: 12 }}>
-              {pendingQuizzes.length === 0 && (
-                <div style={{ color: "#9CA3AF" }}>No pending quizzes</div>
-              )}
+            <div className="assignment-content">
+              {!assignment ? (
+                <div className="empty-state">
+                  <div className="empty-icon">📝</div>
+                  <p>No pending assignments</p>
+                </div>
+              ) : (
+                <>
+                  <div className="assignment-header">
+                    <div className="assignment-icon">📘</div>
+                    <div className="assignment-details">
+                      <h4>{assignment.title}</h4>
+                      <p>{assignment.subject}</p>
 
-              {pendingQuizzes.map((q) => (
-                <div
-                  key={q.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "10px 0",
-                    borderBottom: "1px solid #F3F4F6"
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 700 }}>{q.title}</div>
-
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "#9CA3AF"
-                      }}
-                    >
-                      {q.questions ?? 0} question • {q.duration ?? "-"}
+                      <div className="assignment-deadline">
+                        <span className="deadline-label">Due:</span>
+                        <span className="deadline-time">
+                          {assignment.deadline}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <button
-                      style={{
-                        background: "transparent",
-                        border: "1px solid #10B981",
-                        color: "#10B981",
-                        padding: "6px 10px",
-                        borderRadius: 8
-                      }}
-                    >
-                      Start
-                    </button>
+                  <div className="assignment-actions">
+                    <button className="secondary-btn">View</button>
+                    <button className="primary-btn">Upload</button>
                   </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Pending Quizzes */}
+          <div className="content-card">
+            <div className="card-header">
+              <h3>Pending Quizzes</h3>
+              <button className="view-all-btn">See All</button>
+            </div>
+
+            <div className="quizzes-list">
+              {pendingQuizzes.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">❓</div>
+                  <p>No pending quizzes</p>
                 </div>
-              ))}
+              ) : (
+                pendingQuizzes.map((q) => (
+                  <div key={q.id} className="quiz-item">
+                    <div className="quiz-info">
+                      <h4 className="quiz-title">{q.title}</h4>
+                      <p className="quiz-meta">
+                        {q.questions || 0} questions • {q.duration || 15} min
+                      </p>
+                    </div>
+
+                    <button className="start-btn secondary-btn">Start</button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

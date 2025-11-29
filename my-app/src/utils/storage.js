@@ -1,4 +1,4 @@
-// storage.jsx
+ //orage.js
 const KEY = "spams_v2_store";
 
 const seed = {
@@ -33,75 +33,115 @@ const seed = {
   reasons: [],
   messages: [],
 
-  // --------------------------
-  // 🔥 DASHBOARD STATIC DATA
-  // --------------------------
+  // -------------------------------
+  // 🔥 DYNAMIC DASHBOARD DATA
+  // -------------------------------
   dashboard: {
-    upcomingClasses: [
-      {
-        id: "c1",
-        title: "Linear Algebra Intro",
-        subject: "Math",
-        teacher: "Prof. Bob",
-        date: "Jan 26",
-        time: "10:00 AM",
-        timeLeft: "2 hours left",
-        image: "https://picsum.photos/100"
-      },
-      {
-        id: "c2",
-        title: "Wave Optics",
-        subject: "Physics",
-        teacher: "Prof. Ellis",
-        date: "Jan 28",
-        time: "2:30 PM",
-        timeLeft: "1 day left",
-        image: "https://picsum.photos/101"
-      }
-    ],
-
-    subjects: [
-      { id: "sub1", name: "Mathematics", teacher: "Prof. Bob", progress: 70, score: 82 },
-      { id: "sub2", name: "Physics", teacher: "Prof. Ella", progress: 50, score: 74 },
-      { id: "sub3", name: "Chemistry", teacher: "Dr. Smith", progress: 40, score: 66 }
-    ],
-
-    assignments: [
-      { id: "a1", title: "Math Assignment 1", dueDate: "Jan 30", status: "Pending" },
-      { id: "a2", title: "Physics Practical File", dueDate: "Feb 2", status: "Completed" }
-    ],
-
-    pendingQuizzes: [
-      { id: "q1", title: "CIE-1 Math Quiz", subject: "Mathematics", due: "Due Tomorrow" },
-      { id: "q2", title: "Optics Quiz", subject: "Physics", due: "Due in 3 days" }
-    ],
-
-    performance: {
-      attendance: 86,
-      cie: {
-        math: 24,
-        physics: 21,
-        chemistry: 18
-      }
-    }
+    upcomingClasses: [],   // you can keep empty or seed manually
+    dashboardSubjects: [], // will be auto-filled dynamically
+    cie_marks_for_chart: [],
+    attendanceTimeline: [],
+    assignment: null,
+    pendingQuizzes: [],
+    completedCourses: 0,
+    hoursSpent: "0h",
+    performance: {}
   }
 };
 
+
+
+// ---------------------------------------------
+//  ⭐ Helper to generate dashboard dynamically
+// ---------------------------------------------
+function generateDashboard(st) {
+  if (!st) return seed.dashboard;
+
+  const student = st.students?.[0];
+  if (!student) return seed.dashboard;
+
+  const studentId = student.id;
+
+  // Generate subjects for dashboard
+  const dashboardSubjects = st.subjects.map(sub => {
+    const cie = st.cie_marks.filter(c => c.studentId === studentId && c.subjectId === sub.id);
+    const attendance = st.attendance.filter(a => a.studentId === studentId && a.subjectId === sub.id);
+
+    const progress = Math.min(100, cie.length * 30);   // Example formula
+    const score = Math.floor(
+      cie.reduce((acc, m) => acc + (m.obtained || 0), 0) / (cie.length || 1)
+    );
+
+    return {
+      id: sub.id,
+      name: sub.name,
+      progress,
+      score
+    };
+  });
+
+  // CIE line chart data
+  const cieChart = st.cie_marks
+    .filter(c => c.studentId === studentId)
+    .map(c => ({
+      cie: `CIE-${c.cieNo}`,
+      expected: c.expected,
+      obtained: c.obtained
+    }));
+
+  // Attendance timeline graph
+  const attendanceTimeline = st.attendance
+    .filter(a => a.studentId === studentId)
+    .map(a => ({
+      date: a.date,
+      val: a.status === "present" ? 100 : 0
+    }));
+
+  // Attendance % calculation
+  const total = st.attendance.filter(a => a.studentId === studentId).length;
+  const present = st.attendance.filter(a => a.studentId === studentId && a.status === "present").length;
+
+  const attendancePercent = total ? Math.round((present / total) * 100) : 100;
+
+  return {
+    ...st.dashboard,
+    dashboardSubjects,
+    cie_marks_for_chart: cieChart,
+    attendanceTimeline,
+    performance: {
+      attendance: attendancePercent,
+      cie: {} // you can fill subject-wise if needed
+    }
+  };
+}
+
+
+
+// --------------------------
+// Main read/write functions
+// --------------------------
 function read() {
   const raw = localStorage.getItem(KEY);
+
   if (!raw) {
-    localStorage.setItem(KEY, JSON.stringify(seed));
-    return seed;
+    const finalSeed = { ...seed, dashboard: generateDashboard(seed) };
+    localStorage.setItem(KEY, JSON.stringify(finalSeed));
+    return finalSeed;
   }
+
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    parsed.dashboard = generateDashboard(parsed);
+    return parsed;
   } catch {
-    localStorage.setItem(KEY, JSON.stringify(seed));
-    return seed;
+    const fixed = { ...seed, dashboard: generateDashboard(seed) };
+    localStorage.setItem(KEY, JSON.stringify(fixed));
+    return fixed;
   }
 }
 
 function write(data) {
+  data.dashboard = generateDashboard(data);
   localStorage.setItem(KEY, JSON.stringify(data));
 }
 
