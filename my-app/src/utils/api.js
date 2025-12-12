@@ -10,12 +10,14 @@ function saveStore(s) {
 
 export const api = {
   // ---------------- AUTH ----------------
-  async login(email, password) {
+ async login(email, password) {
     const s = getStore();
+    console.log("Logging in with:", email, password);
+    console.log("All users:", s.users);
     const user = s.users.find(u => u.email === email && u.password === password);
     if (!user) throw new Error("Invalid credentials");
     return { user };
-  },
+},
 
   // ---------------- SUBJECTS ----------------
   async listSubjects() {
@@ -23,23 +25,38 @@ export const api = {
     return s.subjects;
   },
 
-  // ---------------- STUDENTS ----------------
-  async listStudents(facultyId = null) {
+  // ---------------- STUDENTS (for faculty + proctor) ----------------
+  async listStudents(filterId = null, role = null) {
     const s = getStore();
 
-    // Filter subjects for this faculty (if facultyId provided)
-    let subjectsForFaculty = s.subjects;
-    if (facultyId) {
-      subjectsForFaculty = s.subjects.filter(sub => sub.facultyId === facultyId);
-    }
-    const subjectIds = subjectsForFaculty.map(sub => sub.id);
+    // faculty → filter by subjects
+    if (role === "faculty") {
+      const subjects = s.subjects.filter(sub => sub.facultyId === filterId);
+      const subjectIds = subjects.map(sub => sub.id);
 
-    // Return all students and attach their related data
+      return s.students.map(stu => ({
+        ...stu,
+        cie_marks: s.cie_marks.filter(m => m.studentId === stu.id && subjectIds.includes(m.subjectId)),
+        attendance: s.attendance.filter(a => a.studentId === stu.id),
+        leaves: s.leaves.filter(l => l.studentId === stu.id)
+      }));
+    }
+
+    // proctor → see all students under the proctor group
+    if (role === "proctor") {
+      const proctorStudents = s.students.filter(stu => stu.proctorId === filterId);
+      return proctorStudents.map(stu => ({
+        ...stu,
+        cie_marks: s.cie_marks.filter(m => m.studentId === stu.id),
+        attendance: s.attendance.filter(a => a.studentId === stu.id),
+        leaves: s.leaves.filter(l => l.studentId === stu.id)
+      }));
+    }
+
+    // admin → return everything
     return s.students.map(stu => ({
       ...stu,
-      cie_marks: s.cie_marks.filter(
-        m => m.studentId === stu.id && (facultyId ? subjectIds.includes(m.subjectId) : true)
-      ),
+      cie_marks: s.cie_marks.filter(m => m.studentId === stu.id),
       attendance: s.attendance.filter(a => a.studentId === stu.id),
       leaves: s.leaves.filter(l => l.studentId === stu.id)
     }));
@@ -87,7 +104,7 @@ export const api = {
     const r = s.reasons.find(x => x.id === id);
     if (r) {
       r.facultyReply = replyText;
-      r.seenByStudent = false; // mark unread for student
+      r.seenByStudent = false;
     }
     saveStore(s);
     return r;

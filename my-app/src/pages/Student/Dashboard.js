@@ -194,7 +194,7 @@ export default function StudentDashboard() {
                   <div key={sub.id} className="course-row">
                     <div className="course-info">
                       <h4 className="course-name">{sub.name}</h4>
-                      <p className="course-stats">
+                         <p className="course-stats">
                         Progress: {sub.progress || 0}%
                       </p>
                     </div>
@@ -213,7 +213,7 @@ export default function StudentDashboard() {
                     </div>
 
                     <div className="score-section">
-                      <span className="score-value">{sub.score || 0}%</span>
+                      <p className="score-value"> Score: {sub.score || 0}%</p>
                     </div>
 
                     <div className="status-section">

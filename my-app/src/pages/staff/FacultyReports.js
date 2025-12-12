@@ -16,7 +16,7 @@ export default function FacultyReports(){
   }
 
   function sendMessage(){
-    // mock send — in real app integrate email/sms
+    // mock send — in real app integracate email/sms
     setSent(`Message sent to ${selected.email}: "${message}"`);
     setMessage("");
     setTimeout(()=>setSent(""), 4000);
