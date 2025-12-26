@@ -3,27 +3,32 @@ import { AuthProvider, useAuth } from "./utils/auth";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 
-// student
-import Dashboard from "./pages/Student/Dashboard";
+// Student Pages
+import StudentDashboard from "./pages/Student/Dashboard";
 import Progress from "./pages/Student/Progress";
 import Attendance from "./pages/Student/Attendance";
 import Reports from "./pages/Student/Reports";
+import StudentActivityCertificates from "./pages/Student/StudentActivityCertificates";
 
-// faculty
-import FacultyDashboard from "./pages/staff/FacultyDashboard";
-import FacultyProgress from "./pages/staff/FacultyProgress";
-import FacultyReports from "./pages/staff/FacultyReports";
+// Faculty Pages
+import FacultyDashboard from "./pages/faculty/FacultyDashboard";
+import FacultyProgress from "./pages/faculty/FacultyProgress";
+import FacultyReports from "./pages/faculty/FacultyReports";
+import ViewCertificates from "./pages/faculty/ViewCertificates";
 
-// proctor
+// Proctor Pages
 import ProctorDashboard from "./pages/proctor/ProctorDashboard";
+import Certificates from "./pages/proctor/Certificates";
+import ActivityCertificates from "./pages/proctor/ActivityCertificates";
+import ProctorAttendance from "./pages/proctor/Attendance";
 
-import Admin from "./pages/Admin";
+// Auth & Registration
 import Login from "./pages/Login";
+import FacultyRegister from "./Register/FacultyRegister";
+import StudentRegister from "./Register/StudentRegister";
+import RegisterRoleSelect from "./Register/RegisterRoleSelect";
 
-
-// ---------------------------
-// App Shell (Navbar + Sidebar)
-// ---------------------------
+// App layout wrapper
 function AppLayout({ children }) {
   return (
     <div className="app">
@@ -36,157 +41,83 @@ function AppLayout({ children }) {
   );
 }
 
-
-// ---------------------------
-// Generic Protected Route
-// ---------------------------
-function ProtectedRoute({ children }) {
-  const { user } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
+// Role-protected route
+function RoleRoute({ children }) {
   return children;
 }
 
-
-// ---------------------------
-// ROLE-BASED ROUTE PROTECTOR
-// ---------------------------
-function RoleRoute({ children, role }) {
-  const { user } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== role) return <Navigate to="/login" replace />;
-  return children;
-}
-
-
-// ---------------------------
-// MAIN APP ROUTER
-// ---------------------------
 export default function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
+          {/* Landing page: registration role select */}
+          <Route path="/" element={<RegisterRoleSelect />} />
 
-          {/* Login */}
+          {/* Registration */}
+          <Route path="/register/student" element={<StudentRegister />} />
+          <Route path="/register/faculty" element={<FacultyRegister />} />
+
+          {/* Login (optional, only via link) */}
           <Route path="/login" element={<Login />} />
 
-
-          {/* ----------------------- */}
-          {/* STUDENT ROUTES          */}
-          {/* ----------------------- */}
+          {/* STUDENT routes */}
           <Route
-            path="/student/dashboard"
+            path="/student/*"
             element={
-              <ProtectedRoute>
-                <RoleRoute role="student">
-                  <AppLayout><Dashboard /></AppLayout>
-                </RoleRoute>
-              </ProtectedRoute>
+              <RoleRoute allowed={["student"]}>
+                <AppLayout>
+                  <Routes>
+                    <Route path="dashboard" element={<StudentDashboard />} />
+                    <Route path="progress" element={<Progress />} />
+                    <Route path="attendance" element={<Attendance />} />
+                    <Route path="reports" element={<Reports />} />
+                    <Route path="activity" element={<StudentActivityCertificates />} />
+                    <Route path="*" element={<Navigate to="dashboard" />} />
+                  </Routes>
+                </AppLayout>
+              </RoleRoute>
             }
           />
 
+          {/* FACULTY routes */}
           <Route
-            path="/student/progress"
+            path="/faculty/*"
             element={
-              <ProtectedRoute>
-                <RoleRoute role="student">
-                  <AppLayout><Progress /></AppLayout>
-                </RoleRoute>
-              </ProtectedRoute>
+              <RoleRoute allowed={["faculty"]}>
+                <AppLayout>
+                  <Routes>
+                    <Route path="dashboard" element={<FacultyDashboard />} />
+                    <Route path="progress" element={<FacultyProgress />} />
+                    <Route path="reports" element={<FacultyReports />} />
+                    <Route path="viewcertificate" element={<ViewCertificates />} />
+                    <Route path="*" element={<Navigate to="dashboard" />} />
+                  </Routes>
+                </AppLayout>
+              </RoleRoute>
             }
           />
 
+          {/* PROCTOR routes */}
           <Route
-            path="/student/attendance"
+            path="/proctor/*"
             element={
-              <ProtectedRoute>
-                <RoleRoute role="student">
-                  <AppLayout><Attendance /></AppLayout>
-                </RoleRoute>
-              </ProtectedRoute>
+              <RoleRoute allowed={["proctor"]}>
+                <AppLayout>
+                  <Routes>
+                    <Route path="dashboard" element={<ProctorDashboard />} />
+                    <Route path="certificates" element={<Certificates />} />
+                    <Route path="activitycertificate" element={<ActivityCertificates />} />
+                    <Route path="attendance" element={<ProctorAttendance />} />
+                    <Route path="*" element={<Navigate to="dashboard" />} />
+                  </Routes>
+                </AppLayout>
+              </RoleRoute>
             }
           />
 
-          <Route
-            path="/student/reports"
-            element={
-              <ProtectedRoute>
-                <RoleRoute role="student">
-                  <AppLayout><Reports /></AppLayout>
-                </RoleRoute>
-              </ProtectedRoute>
-            }
-          />
-
-
-          {/* ----------------------- */}
-          {/* FACULTY ROUTES          */}
-          {/* ----------------------- */}
-          <Route
-            path="/staff/dashboard"
-            element={
-              <ProtectedRoute>
-                <RoleRoute role="faculty">
-                  <AppLayout><FacultyDashboard /></AppLayout>
-                </RoleRoute>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/staff/progress"
-            element={
-              <ProtectedRoute>
-                <RoleRoute role="faculty">
-                  <AppLayout><FacultyProgress /></AppLayout>
-                </RoleRoute>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/staff/reports"
-            element={
-              <ProtectedRoute>
-                <RoleRoute role="faculty">
-                  <AppLayout><FacultyReports /></AppLayout>
-                </RoleRoute>
-              </ProtectedRoute>
-            }
-          />
-
-
-          {/* ----------------------- */}
-          {/* PROCTOR ROUTES          */}
-          {/* ----------------------- */}
-          <Route
-            path="/proctor/ProctorDashboard"
-            element={
-              <ProtectedRoute>
-                <RoleRoute role="proctor">
-                  <AppLayout><ProctorDashboard /></AppLayout>
-                </RoleRoute>
-              </ProtectedRoute>
-            }
-          />
-
-
-          {/* Admin */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <RoleRoute role="faculty">
-                  <AppLayout><Admin /></AppLayout>
-                </RoleRoute>
-              </ProtectedRoute>
-            }
-          />
-
-
-          {/* Default redirect */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-
+          {/* Catch-all fallback: redirect to landing page */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </AuthProvider>

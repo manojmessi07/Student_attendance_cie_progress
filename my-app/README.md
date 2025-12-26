@@ -1,70 +1,192 @@
-# Getting Started with Create React App
+🎓 Student Performance & Attendance Management System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A role-based web application built using React.js to manage students, faculty, and proctors in an academic environment. The system ensures secure access, clear role separation, and real-world academic workflows.
 
-## Available Scripts
+📌 Project Overview
 
-In the project directory, you can run:
+This project is designed to simplify and digitize academic management by providing:
 
-### `npm start`
+Student performance tracking
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Attendance management
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Certificate handling
 
-### `npm test`
+Role-based dashboards
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+A key design principle of the system is that proctors are faculty members, and during registration, faculty may be assigned proctor responsibilities.
 
-### `npm run build`
+👥 User Roles
+1️⃣ Student
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Registers as a student
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Views attendance status
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Tracks academic progress
 
-### `npm run eject`
+Views reports
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Uploads and views activity certificates
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2️⃣ Faculty
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Views student academic progress
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Generates and views reports
 
-## Learn More
+Reviews certificates
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Monitors student performance
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+3️⃣ Proctor (Faculty with Additional Responsibility)
 
-### Code Splitting
+Proctor is not a separate person
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Only faculty members can become proctors
 
-### Analyzing the Bundle Size
+Manages student attendance
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Approves or rejects attendance with a reason
 
-### Making a Progressive Web App
+Verifies student certificates
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+📝 Registration Logic (Important Feature)
+Faculty Registration Behavior
 
-### Advanced Configuration
+During faculty registration, the system checks whether the faculty member is also a proctor.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Selection	Accounts Created
+Faculty only	1 Faculty account
+Faculty + Proctor	2 linked accounts (Faculty + Proctor)
 
-### Deployment
+This approach ensures:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Clean role-based permissions
 
-### `npm run build` fails to minify
+Secure access control
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Accurate representation of real-world academic roles
+
+🔐 Authentication & Authorization
+
+Role-based authentication using Context API
+
+Secure protected routes
+
+Users can access only their assigned role dashboards
+
+Manual URL access to other roles is restricted
+
+🧭 Application Flow
+
+Application loads with Registration page
+
+User selects role:
+
+Student
+
+Faculty
+
+Faculty may optionally select Proctor responsibility
+
+Login is available only if the user already has an account
+
+After login, user is redirected to their role-specific dashboard
+
+📊 Key Features
+
+Role-based dashboards
+
+Secure routing using React Router
+
+Attendance approval/rejection with reason
+
+Academic progress tracking
+
+Certificate upload and verification
+
+Clean and modular component structure
+
+🛠️ Technologies Used
+
+Frontend: React.js
+
+Routing: React Router DOM
+
+State Management: React Context API
+
+Styling: CSS / Inline styles
+
+Authentication: Custom Auth Context
+
+🗂️ Project Structure (Simplified)
+src/
+├── components/
+│   ├── Navbar.jsx
+│   ├── Sidebar.jsx
+├── pages/
+│   ├── Student/
+│   ├── faculty/
+│   ├── proctor/
+│   ├── Login.jsx
+├── Register/
+│   ├── RegisterRoleSelect.jsx
+│   ├── StudentRegister.jsx
+│   ├── FacultyRegister.jsx
+├── utils/
+│   ├── auth.js
+│   ├── api.js
+│   ├── storage.js
+├── App.js
+
+🚀 How to Run the Project
+
+Clone the repository:
+
+git clone <repository-url>
+
+
+Install dependencies:
+
+npm install
+
+
+Start the development server:
+
+npm start
+
+
+Open in browser:
+
+http://localhost:3000
+
+🌟 Highlights of the Project
+
+Real-world academic role modeling
+
+Faculty–Proctor dual account architecture
+
+Secure role-based access control
+
+Scalable and modular design
+
+Beginner-friendly React implementation
+
+🔮 Future Enhancements
+
+Backend integration (Node.js & Express)
+
+Database support (MongoDB / MySQL)
+
+Admin role
+
+Email notifications
+
+PDF report generation
+
+Real-time attendance tracking
+
+📚 Conclusion
+
+This project demonstrates a complete role-based academic management system with a strong focus on security, scalability, and real-world applicability. The faculty–proctor design is a key architectural decision that ensures clarity and clean access control.

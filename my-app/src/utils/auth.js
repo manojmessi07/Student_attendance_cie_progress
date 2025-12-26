@@ -1,30 +1,25 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { api } from "./api";
+import React, { createContext, useContext, useState } from "react";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const raw = sessionStorage.getItem("spams_user");
-    return raw ? JSON.parse(raw) : null;
+  // 🔴 TEMP FAKE USER (until backend auth is ready)
+  const [user, setUser] = useState({
+    role: "student",
+    name: "Demo User",
+    email: "demo@student.com",
   });
 
-  useEffect(() => {
-    if (user) sessionStorage.setItem("spams_user", JSON.stringify(user));
-    else sessionStorage.removeItem("spams_user");
-  }, [user]);
-
-  async function login(email, password) {
-    const res = await api.login(email, password);
-    setUser(res.user);
-    return res.user;
-  }
-
+  function login() {}
   function logout() {
     setUser(null);
   }
 
-  return <AuthContext.Provider value={{ user, login, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
